@@ -1,0 +1,18 @@
+[Unit]
+Description=ASN Label Printer Web App
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 app.py
+Restart=always
+User=robert
+Environment="PATH=/bin:/usr/local/bin:/home/robert/.local/bin"
+Environment="BROTHER_QL_MODEL=QL-710W"
+Environment="BROTHER_QL_PRINTER=tcp://10.100.20.105"
+Environment="PAPERLESS_URL=https://paperless.contiva.cloud"
+Environment="PAPERLESS_TOKEN=7dc9466d1a8a6c236f09029e46cf3f3d1d6d929a"
+Environment="LABEL_PRINTER_HOST=10.100.10.8"
+WorkingDirectory=/home/robert/label-printer
+
+[Install]
+WantedBy=multi-user.target
