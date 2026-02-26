@@ -11,14 +11,17 @@ FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 
 def generate_image_with_optimal_size():
-    api_asn = get_next_asn()
-    if api_asn is not None:
-        serial_number = api_asn
-    elif os.path.exists(SERIAL_FILE):
+    # Primary: read from local file (fast, always increments)
+    if os.path.exists(SERIAL_FILE):
         with open(SERIAL_FILE, "r") as file:
             serial_number = int(file.read().strip())
     else:
-        serial_number = 1
+        # Fallback: only query Paperless if no local file exists
+        api_asn = get_next_asn()
+        if api_asn is not None:
+            serial_number = api_asn
+        else:
+            serial_number = 1
 
     serial_str = f"ASN{serial_number:05}"
     today = dt.date.today()
@@ -63,6 +66,7 @@ def generate_image_with_optimal_size():
 
     img.save("serial_qr.png", dpi=(600, 600))
 
+    # Save next serial number locally
     with open(SERIAL_FILE, "w") as file:
         file.write(str(serial_number + 1))
 
