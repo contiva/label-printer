@@ -13,6 +13,17 @@
     <form action="/printlabel" method="get">
         <button class="btn btn-secondary btn-lg" type="submit">Label drucken</button>
     </form>
+    <form action="/printwlan" method="post" class="mt-4">
+        <h2 class="h5 mt-4">WLAN-Passwort drucken</h2>
+        <input type="text" name="pw" class="form-control mb-2"
+               placeholder="Passwort (z.B. Kaffee-Sonne-Fluss-Berg)" required>
+        <input type="text" name="ssid" class="form-control mb-2"
+               placeholder="SSID (Default: Contiva Guest)" value="Contiva Guest">
+        <input type="text" name="valid_until" class="form-control mb-2"
+               placeholder="Gültig bis (optional, z.B. 28.04.2026, 00:00 Uhr)">
+        <button class="btn btn-outline-secondary" type="submit">WLAN-PW drucken</button>
+    </form>
+
     {% if request.args.get('message') %}
         <p>{{ request.args.get('message') }}</p>
     {% endif %}
