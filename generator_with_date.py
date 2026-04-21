@@ -6,7 +6,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 from paperless_api import get_next_asn
 
-SERIAL_FILE = "serial_number.txt"
+DATA_DIR = os.environ.get("LABEL_PRINTER_DATA_DIR", ".")
+SERIAL_FILE = os.path.join(DATA_DIR, "serial_number.txt")
+OUTPUT_FILE = os.path.join(DATA_DIR, "serial_qr.png")
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 
@@ -64,7 +66,7 @@ def generate_image_with_optimal_size():
     date_y = text_y + font.size + 10
     draw.text((date_x, date_y), date_str, fill="black", font=font_date)
 
-    img.save("serial_qr.png", dpi=(600, 600))
+    img.save(OUTPUT_FILE, dpi=(600, 600))
 
     # Save next serial number locally
     with open(SERIAL_FILE, "w") as file:
@@ -73,4 +75,5 @@ def generate_image_with_optimal_size():
     print(f"Image created: {serial_str}, {date_str}, width: {total_width}px, QR size: {img_qr.size}")
 
 
-generate_image_with_optimal_size()
+if __name__ == "__main__":
+    generate_image_with_optimal_size()

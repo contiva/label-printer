@@ -1,8 +1,11 @@
+import os
 import sys
 
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 
+DATA_DIR = os.environ.get("LABEL_PRINTER_DATA_DIR", ".")
+OUTPUT_FILE = os.path.join(DATA_DIR, "serial_qr.png")
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 
@@ -37,7 +40,7 @@ def generate_image_with_optimal_size(asset_id):
     text_y = (total_height - font.size) // 2
     draw.text((text_x, text_y), serial_str, fill="black", font=font)
 
-    img.save("serial_qr.png", dpi=(600, 600))
+    img.save(OUTPUT_FILE, dpi=(600, 600))
     print(f"Image created with AssetID: {serial_str}, width: {total_width}px, QR size: {img_qr.size}")
 
 

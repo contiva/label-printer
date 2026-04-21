@@ -1,7 +1,19 @@
 import os
+import subprocess
 from flask import Flask, render_template, request, redirect, url_for, abort
 
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.environ.get("LABEL_PRINTER_DATA_DIR", ".")
+IMAGE = os.path.join(DATA_DIR, "serial_qr.png")
+
 app = Flask(__name__)
+
+
+def _print_image():
+    subprocess.run(
+        ["brother_ql", "print", "-l", "62", "--600dpi", IMAGE],
+        check=False,
+    )
 
 
 @app.route("/")
@@ -11,24 +23,21 @@ def index():
 
 @app.route("/printlabel", methods=["GET", "POST"])
 def print_label():
-    os.system("python3 generator.py")
-    os.environ["PATH"] += os.pathsep + os.path.expanduser("~/.local/bin")
-    os.system("brother_ql print -l 62 --600dpi serial_qr.png")
+    subprocess.run(["python3", os.path.join(APP_DIR, "generator.py")], check=False)
+    _print_image()
     return redirect(url_for("index", message="Label gedruckt"))
 
 
 @app.route("/printlabelWithDate", methods=["GET", "POST"])
 def print_label_with_date():
-    os.system("python3 generator_with_date.py")
-    os.environ["PATH"] += os.pathsep + os.path.expanduser("~/.local/bin")
-    os.system("brother_ql print -l 62 --600dpi serial_qr.png")
+    subprocess.run(["python3", os.path.join(APP_DIR, "generator_with_date.py")], check=False)
+    _print_image()
     return redirect(url_for("index", message="Label gedruckt"))
 
 
 @app.route("/printlabelHistory", methods=["GET", "POST"])
 def print_label_history():
-    os.environ["PATH"] += os.pathsep + os.path.expanduser("~/.local/bin")
-    os.system("brother_ql print -l 62 --600dpi serial_qr.png")
+    _print_image()
     return redirect(url_for("index", message="Label gedruckt"))
 
 
@@ -38,9 +47,11 @@ def print_label_asset():
     if not asset_id or asset_id == "0":
         abort(500, description="(id) query parameter must be provided and non-zero")
 
-    os.system(f"python3 generator_asset.py {int(asset_id)}")
-    os.environ["PATH"] += os.pathsep + os.path.expanduser("~/.local/bin")
-    os.system("brother_ql print -l 62 --600dpi serial_qr.png")
+    subprocess.run(
+        ["python3", os.path.join(APP_DIR, "generator_asset.py"), str(int(asset_id))],
+        check=False,
+    )
+    _print_image()
     return redirect(url_for("index", message="Label gedruckt"))
 
 
