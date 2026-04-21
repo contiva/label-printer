@@ -6,3 +6,6 @@ __pycache__
 serial_number.txt
 serial_qr.png
 test_paths.py
+scratch/
+*.bak
+.env
