@@ -1,5 +1,5 @@
 flask
 qrcode[pil]
-Pillow
+Pillow<10
 requests
 brother_ql
