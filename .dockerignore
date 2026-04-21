@@ -1,0 +1,8 @@
+.git
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+serial_number.txt
+serial_qr.png
+test_paths.py
