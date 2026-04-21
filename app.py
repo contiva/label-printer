@@ -2,6 +2,7 @@ import os
 import subprocess
 from flask import Flask, render_template, request, redirect, url_for, abort
 
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.environ.get("LABEL_PRINTER_DATA_DIR", ".")
 IMAGE = os.path.join(DATA_DIR, "serial_qr.png")
 
@@ -22,14 +23,14 @@ def index():
 
 @app.route("/printlabel", methods=["GET", "POST"])
 def print_label():
-    subprocess.run(["python3", "generator.py"], check=False, cwd=os.path.dirname(__file__) or ".")
+    subprocess.run(["python3", os.path.join(APP_DIR, "generator.py")], check=False)
     _print_image()
     return redirect(url_for("index", message="Label gedruckt"))
 
 
 @app.route("/printlabelWithDate", methods=["GET", "POST"])
 def print_label_with_date():
-    subprocess.run(["python3", "generator_with_date.py"], check=False, cwd=os.path.dirname(__file__) or ".")
+    subprocess.run(["python3", os.path.join(APP_DIR, "generator_with_date.py")], check=False)
     _print_image()
     return redirect(url_for("index", message="Label gedruckt"))
 
@@ -47,9 +48,8 @@ def print_label_asset():
         abort(500, description="(id) query parameter must be provided and non-zero")
 
     subprocess.run(
-        ["python3", "generator_asset.py", str(int(asset_id))],
+        ["python3", os.path.join(APP_DIR, "generator_asset.py"), str(int(asset_id))],
         check=False,
-        cwd=os.path.dirname(__file__) or ".",
     )
     _print_image()
     return redirect(url_for("index", message="Label gedruckt"))

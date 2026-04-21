@@ -1,5 +1,4 @@
 import importlib
-import os
 
 
 def test_generator_uses_data_dir(tmp_path, monkeypatch):
@@ -9,6 +8,18 @@ def test_generator_uses_data_dir(tmp_path, monkeypatch):
     import generator
     importlib.reload(generator)
     generator.generate_image_with_optimal_size()
+
+    assert (tmp_path / "serial_qr.png").exists()
+    assert (tmp_path / "serial_number.txt").read_text().strip() == "42001"
+
+
+def test_generator_with_date_uses_data_dir(tmp_path, monkeypatch):
+    monkeypatch.setenv("LABEL_PRINTER_DATA_DIR", str(tmp_path))
+    (tmp_path / "serial_number.txt").write_text("42000")
+
+    import generator_with_date
+    importlib.reload(generator_with_date)
+    generator_with_date.generate_image_with_optimal_size()
 
     assert (tmp_path / "serial_qr.png").exists()
     assert (tmp_path / "serial_number.txt").read_text().strip() == "42001"

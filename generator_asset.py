@@ -5,7 +5,6 @@ import qrcode
 from PIL import Image, ImageDraw, ImageFont
 
 DATA_DIR = os.environ.get("LABEL_PRINTER_DATA_DIR", ".")
-SERIAL_FILE = os.path.join(DATA_DIR, "serial_number.txt")
 OUTPUT_FILE = os.path.join(DATA_DIR, "serial_qr.png")
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
