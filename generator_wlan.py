@@ -67,8 +67,8 @@ def generate(pw: str, ssid: str, valid_until: str) -> None:
 
     steps = [
         ("1.", f'WLAN "{ssid}" wählen'),
-        ("2.", "Passwort oben eingeben"),
-        ("3.", "AGB akzeptieren"),
+        ("2.", "AGB akzeptieren"),
+        ("3.", "Passwort oben eingeben"),
     ]
     session_hint = "Anmeldung gilt bis Tagesende (00:00 Uhr)."
 
