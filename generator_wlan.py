@@ -58,8 +58,10 @@ def generate(pw: str, ssid: str, valid_until: str) -> None:
     tmp = Image.new("RGB", (LABEL_WIDTH_PX, 10), "white")
     d = ImageDraw.Draw(tmp)
 
-    font_header = _load_font(32)
-    font_pw = _fit_font(d, pw, LABEL_WIDTH_PX - 40, [72, 64, 56, 48, 40, 32])
+    font_header = _load_font(28)
+    font_pw_label = _load_font(28)
+    # Leave extra margin so the box padding doesn't push the password into the edge.
+    font_pw = _fit_font(d, pw, LABEL_WIDTH_PX - 120, [72, 64, 56, 48, 40, 32])
     font_meta = _load_font(26)
     font_step_num = _load_font(24)
     font_step_text = _load_font(24, bold=False)
@@ -81,12 +83,17 @@ def generate(pw: str, ssid: str, valid_until: str) -> None:
     sep_gap = 14
 
     header_h = font_header.size
+    pw_label_h = font_pw_label.size
     pw_h = font_pw.size
     meta_h = font_meta.size
     step_h = max(font_step_num.size, font_step_text.size)
     caption_h = font_caption.size
 
-    total_h = pad + header_h + line_gap + pw_h + line_gap + meta_h
+    pw_box_pad_v = 16
+    pw_box_h = pw_h + 2 * pw_box_pad_v
+
+    total_h = pad + header_h + section_gap
+    total_h += pw_label_h + 6 + pw_box_h + line_gap + meta_h
     if valid_until:
         total_h += line_gap + meta_h
     total_h += section_gap + sep_gap
@@ -104,10 +111,15 @@ def generate(pw: str, ssid: str, valid_until: str) -> None:
 
     y = pad
     centre("Contiva Gäste-WLAN", y, font_header)
-    y += header_h + line_gap
+    y += header_h + section_gap
 
-    centre(pw, y, font_pw)
-    y += pw_h + line_gap
+    centre("Passwort dieser Woche:", y, font_pw_label)
+    y += pw_label_h + 6
+
+    box_x0, box_x1 = pad * 2, LABEL_WIDTH_PX - pad * 2
+    draw.rectangle([(box_x0, y), (box_x1, y + pw_box_h)], outline="black", width=4)
+    centre(pw, y + pw_box_pad_v, font_pw)
+    y += pw_box_h + line_gap
 
     centre(f"SSID: {ssid}", y, font_meta)
     y += meta_h
