@@ -8,19 +8,22 @@ shared OUTPUT_FILE that `brother_ql print` consumes.
 import argparse
 import os
 
+import qrcode
 from PIL import Image, ImageDraw, ImageFont
 
 DATA_DIR = os.environ.get("LABEL_PRINTER_DATA_DIR", ".")
 OUTPUT_FILE = os.path.join(DATA_DIR, "serial_qr.png")
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+FONT_PATH_REGULAR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
 # Brother QL 62mm endless at 600dpi — print-area width in pixels.
 LABEL_WIDTH_PX = 696
 
 
-def _load_font(size: int) -> ImageFont.ImageFont:
+def _load_font(size: int, bold: bool = True) -> ImageFont.ImageFont:
+    path = FONT_PATH if bold else FONT_PATH_REGULAR
     try:
-        return ImageFont.truetype(FONT_PATH, size)
+        return ImageFont.truetype(path, size)
     except IOError:
         return ImageFont.load_default()
 
@@ -36,25 +39,61 @@ def _fit_font(draw: ImageDraw.ImageDraw, text: str, max_width: int,
     return _load_font(sizes[-1])
 
 
+def _wifi_qr(ssid: str, box_size: int = 8) -> Image.Image:
+    # Open network (no password): WIFI:T:nopass;S:<ssid>;;
+    # The portal's captive-portal page handles auth after the client joins.
+    payload = f"WIFI:T:nopass;S:{ssid};;"
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=box_size,
+        border=2,
+    )
+    qr.add_data(payload)
+    qr.make(fit=True)
+    return qr.make_image(fill_color="black", back_color="white").convert("RGB")
+
+
 def generate(pw: str, ssid: str, valid_until: str) -> None:
-    # Build once at a large canvas, measure, then redraw at exact height.
-    # Simpler: compute heights from font metrics up front.
     tmp = Image.new("RGB", (LABEL_WIDTH_PX, 10), "white")
     d = ImageDraw.Draw(tmp)
 
     font_header = _load_font(32)
     font_pw = _fit_font(d, pw, LABEL_WIDTH_PX - 40, [72, 64, 56, 48, 40, 32])
     font_meta = _load_font(26)
+    font_step_num = _load_font(24)
+    font_step_text = _load_font(24, bold=False)
+    font_caption = _load_font(22, bold=False)
 
+    steps = [
+        ("1.", f'WLAN "{ssid}" wählen'),
+        ("2.", "AGB akzeptieren"),
+        ("3.", "Passwort oben eingeben"),
+    ]
+    session_hint = "Anmeldung gilt bis Tagesende (00:00 Uhr)."
+
+    qr_img = _wifi_qr(ssid, box_size=8)
+    qr_w, qr_h = qr_img.size
+
+    pad = 18
     line_gap = 10
+    section_gap = 22
+    sep_gap = 14
+
     header_h = font_header.size
     pw_h = font_pw.size
     meta_h = font_meta.size
-    pad = 18
+    step_h = max(font_step_num.size, font_step_text.size)
+    caption_h = font_caption.size
+
     total_h = pad + header_h + line_gap + pw_h + line_gap + meta_h
     if valid_until:
         total_h += line_gap + meta_h
-    total_h += pad
+    total_h += section_gap + sep_gap
+    total_h += caption_h + line_gap
+    total_h += len(steps) * (step_h + line_gap)
+    total_h += section_gap + qr_h + line_gap + caption_h
+    total_h += section_gap + caption_h + pad
 
     img = Image.new("RGB", (LABEL_WIDTH_PX, total_h), "white")
     draw = ImageDraw.Draw(img)
@@ -75,7 +114,32 @@ def generate(pw: str, ssid: str, valid_until: str) -> None:
 
     if valid_until:
         y += line_gap
-        centre(f"Gültig bis: {valid_until}", y, font_meta)
+        centre(f"Passwort gültig bis: {valid_until}", y, font_meta)
+        y += meta_h
+
+    y += section_gap
+    draw.line([(pad * 2, y), (LABEL_WIDTH_PX - pad * 2, y)], fill="black", width=2)
+    y += sep_gap
+
+    centre("So verbindest du dich:", y, font_caption)
+    y += caption_h + line_gap
+
+    step_left = 60
+    text_left = step_left + 42
+    for num, text in steps:
+        draw.text((step_left, y), num, fill="black", font=font_step_num)
+        draw.text((text_left, y), text, fill="black", font=font_step_text)
+        y += step_h + line_gap
+
+    y += section_gap
+    qr_x = (LABEL_WIDTH_PX - qr_w) // 2
+    img.paste(qr_img, (qr_x, y))
+    y += qr_h + line_gap
+    centre("QR scannen = direkt verbinden", y, font_caption)
+    y += caption_h
+
+    y += section_gap
+    centre(session_hint, y, font_caption)
 
     img.save(OUTPUT_FILE, dpi=(600, 600))
     print(
