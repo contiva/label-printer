@@ -41,6 +41,42 @@ def print_label_history():
     return redirect(url_for("index", message="Label gedruckt"))
 
 
+@app.route("/printpng", methods=["POST"])
+def print_png():
+    """Print a caller-supplied PNG. Used by services that own their
+    own label rendering — captive-portal sends the WLAN-Passwort PNG
+    it also shows in the admin preview, so what prints matches what
+    the admin saw 1:1 (single source of truth, no duplicate generator
+    in this repo).
+
+    Accepted body shapes:
+      - ``multipart/form-data`` with an ``image`` file field (preferred)
+      - raw ``image/png`` bytes
+    """
+    data: bytes
+    upload = request.files.get("image") if request.files else None
+    if upload is not None:
+        data = upload.read()
+    elif (request.headers.get("Content-Type") or "").startswith("image/"):
+        data = request.get_data() or b""
+    else:
+        abort(400, description="POST a PNG via multipart 'image' field or raw image/png body")
+
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        abort(400, description="payload is not a PNG")
+
+    # Atomic write: brother_ql reads IMAGE; we never want it to read a
+    # half-flushed file, so write next to it and rename in place.
+    tmp = IMAGE + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(data)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, IMAGE)
+    _print_image()
+    return ("", 204)
+
+
 @app.route("/printlabelAsset", methods=["GET", "POST"])
 def print_label_asset():
     asset_id = request.args.get("id")
